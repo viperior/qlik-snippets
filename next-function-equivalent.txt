@@ -1,0 +1,97 @@
+/* In Qlik Sense, there is the very useful function, Previous([Field Name]),
+which returns the previous value loaded into the specified field.
+
+However, there is no Next() function to provide the complementary functionality.
+This can be overcome by exactly reversing whatever ordering you used with
+Previous(). This logical compliment of Previous() will return the value you
+would expect returned from Next(), if such a function existed.
+
+See the example below, which demonstrates this on a table of timestamped status
+changes.
+*/
+
+// Customer Status Fact (Periodic)
+
+[Customer Status (Periodic)]:
+Load
+    [%Customer Key],
+    [Customer Activity Description] AS [Customer Status],
+    [Customer Activity Timestamp]   AS [Customer Activity Timestamp],
+    1                               AS [Customer Status Count]
+From [lib://Some Location/Extract Data File.qvd] (qvd)
+;
+
+/* Order the status fact table so that expiration dates can be added to each
+record.
+*/
+
+Rename Table [Customer Status (Periodic)] To [Temp Customer Status (Periodic)];
+
+[Customer Status (Periodic)]:
+NoConcatenate
+Load
+    [%Customer Key],
+    [Customer Status],
+    [Customer Activity Timestamp],
+    [Customer Status Count],
+    RowNo() AS [Row Number]
+Resident [Temp Customer Status (Periodic)]
+Order By [%Customer Key], [Customer Activity Timestamp]
+;
+
+Drop Table [Temp Customer Status (Periodic)];
+
+/* Create a row number that resets with each new Customer. This number
+represents the status number within an Customer's status history.
+*/
+
+Rename Table [Customer Status (Periodic)] To [Temp Customer Status (Periodic)];
+
+[Customer Status (Periodic)]:
+NoConcatenate
+Load
+    *,
+    AutoNumber([Row Number], [%Customer Key]) AS [Status Sequence Row Number]
+Resident [Temp Customer Status (Periodic)]
+Order By [%Customer Key], [Customer Activity Timestamp]
+;
+
+Drop Table [Temp Customer Status (Periodic)];
+
+/* Reverse the table order and use Previous(), which when in reserve, functions
+like a Next() function or Lead() in SQL Server.
+*/
+
+Rename Table [Customer Status (Periodic)] To [Temp Customer Status (Periodic)];
+
+[Customer Status (Periodic)]:
+Load
+    *,
+    [End Effective Date/Time] - [Begin Effective Date/Time] AS [Status Duration (Days)]
+;
+
+Load
+    *,
+    [Customer Activity Timestamp] AS [Begin Effective Date/Time],
+    If(
+        IsNull([Next Customer Key]) Or [%Customer Key] <> [Next Customer Key],
+        Timestamp($(vNow)),
+        [Next Customer Activity Timestamp]
+    )                              AS [End Effective Date/Time],
+    If(
+        [%Customer Key] = [Next Customer Key] And [Customer Status] = [Next Customer Status],
+        Dual('Duplicate Status', True()),
+        Dual('Not Duplicate Status', False())
+    )                              AS [Status Is Duplicate Flag]
+;
+
+Load
+    *,
+    Previous([%Customer Key])             AS [Next Customer Key],
+    Previous([Customer Activity Timestamp]) AS [Next Customer Activity Timestamp],
+    Previous([Customer Status])           AS [Next Customer Status]
+Resident [Temp Customer Status (Periodic)]
+Order By [Row Number] Desc
+;
+
+Drop Table [Temp Customer Status (Periodic)];
