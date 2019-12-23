@@ -1,0 +1,15 @@
+// GetMinDate Subroutine
+// Input: variable to store return value, table name, date integer field name to scan for min date
+// Output: min date as an integer (stored in global variable)
+
+Sub GetMinDate(vMinDate, vTableName, vDateFieldName)
+    [Min Date]:
+    Load
+         Min([$(vDateFieldName)]) AS [Min Date]
+    Resident [$(vTableName)]
+    ;
+    
+    vMinDate = Peek('Min Date', 0, 'Min Date');
+    
+    Drop Table [Min Date];
+End Sub;

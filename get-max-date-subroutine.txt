@@ -1,0 +1,15 @@
+// GetMaxDate Subroutine
+// Input: variable to store return value, table name, date integer field name to scan for max date
+// Output: max date as an integer (stored in global variable)
+
+Sub GetMaxDate(vMaxDate, vTableName, vDateFieldName)
+    [Max Date]:
+    Load
+         Max([$(vDateFieldName)]) AS [Max Date]
+    Resident [$(vTableName)]
+    ;
+    
+    vMaxDate = Peek('Max Date', 0, 'Max Date');
+    
+    Drop Table [Max Date];
+End Sub;
