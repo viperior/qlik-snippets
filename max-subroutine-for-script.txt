@@ -1,0 +1,65 @@
+// Max() function for load script
+// Input: variable to store return value, two numeric values
+// Output: the larger of the two input values
+
+Sub MaxExceptionDisplayDebugInfo
+    Trace Error encountered while attempting to determine the maximum of values:;
+    Trace Value A = $(vValueA);
+    Trace Value B = $(vValueB);
+    Call ThrowException('Error encountered while calling Max() subroutine.');
+End Sub;
+
+Sub MaxExceptionNotANumber(vValueA, vValueB)
+    Trace Non-numeric value detected when calling Max() subroutine.;
+    Call MaxExceptionDisplayDebugInfo
+End Sub;
+
+Sub MaxExceptionUnknownError(vValueA, vValueB)
+    Call MaxExceptionDisplayDebugInfo
+End Sub;
+
+Sub Max(vMax, vValueA, vValueB)
+    [Values]:
+    Load
+        *,
+        If(
+            [Value Is A Number],
+            0,
+            1
+        ) AS [Non-Numeric Value Count]
+    ;
+    
+    Load
+        *,
+        IsNum([Value]) AS [Value Is A Number]
+    Inline [
+        Value
+        $(vValueA)
+        $(vValueB)
+    ]
+    ;
+    
+    [Non-Numeric Value Count]:
+    Load
+        Sum([Non-Numeric Value Count]) AS [Non-Numeric Value Count]
+    Resident [Values]
+    ;
+    
+    Drop Table [Values];
+    Let vNonNumericValueCount = Peek('Non-Numeric Value Count', 0, 'Non-Numeric Value Count');
+    Drop Table [Non-Numeric Value Count];
+    
+    If $(vNonNumericValueCount) > 0 Then
+        Call MaxExceptionNotANumber(vValueA, vValueB)
+    End If
+    
+    If $(vValueA) > $(vValueB) Then
+        vMax = $(vValueA)
+    ElseIf $(vValueB) > $(vValueA) Then
+        vMax = $(vValueB)
+    ElseIf $(vValueA) = $(vValueB) Then
+        vMax = $(vValueA)
+    Else
+        Call MaxExceptionUnknownError(vValueA, vValueB)
+    End If
+End Sub;
