@@ -1,0 +1,92 @@
+// ProfileTableFieldValues Subroutine
+// Analyzes a table loaded into memory and produces a series of statistics about
+// the field values within. The stats are similar to the ones provided by Qlik
+// Sense's model viewer, but this loads the information into a table for easier
+// browsing and visualization. Measurements include field density, cardinality,
+// present values, and the number of null values or empty strings.
+// Input: name of the table to analyze, name of the table in which to store the results
+// Output: none (results are stored a table with the name specified during input)
+
+Sub ProfileTableFieldValues(vTableNameToAnalyze, vResultsTableName)
+    Let vTableRows = NoOfRows('$(vTableNameToAnalyze)');
+    Let vNumberOfFields = NoOfFields('$(vTableNameToAnalyze)');
+
+    [$(vResultsTableName)]:
+    Load
+        *,
+        Round(([Field Distinct Value Count] / [Table Rows]) * 100.0, 0.0001) AS [Field Cardinality (%)]
+    ;
+
+    Load
+        *,
+        FieldValueCount([Field Name]) AS [Field Distinct Value Count]
+    ;
+
+    Load
+         [Row Number] AS [Field Number],
+         FieldName([Row Number], '$(vTableName)') AS [Field Name],
+         $(vTableRows) AS [Table Rows]
+    ;
+
+    Load
+        RecNo() AS [Row Number]
+    AutoGenerate $(vNumberOfFields)
+    ;
+
+    For vCounter = 0 To $(vNumberOfFields) - 1
+        Let vCurrentFieldName = Peek('Field Name', $(vCounter), 'Field');
+
+        [Field Density]:
+        Load
+            [Field Name],
+            Sum([Field Value Is Null Or Empty Count]) AS [Field Value Is Null Or Empty Count]
+        Group By [Field Name]
+        ;
+
+        Load
+            '$(vCurrentFieldName)' AS [Field Name],
+            If(
+                IsNull([$(vCurrentFieldName)]) Or Match([$(vCurrentFieldName)], ''),
+                1,
+                0
+            ) AS [Field Value Is Null Or Empty Count]
+        Resident [$(vTableName)]
+        ;
+    Next vCounter
+
+    [Field Name To Field Value Is Null Or Empty Count Map]:
+    Mapping Load
+        [Field Name],
+        [Field Value Is Null Or Empty Count]
+    Resident [Field Density]
+    ;
+
+    Drop Table [Field Density];
+
+    Rename Table [$(vResultsTableName)] To [Temp $(vResultsTableName)];
+
+    [$(vResultsTableName)]:
+    NoConcatenate
+    Load
+        *,
+        Round(([Field Values Present] / [Table Rows]) * 100.0, 0.0001) AS [Field Density (%)],
+        If(
+            [Field Values Present] = 0,
+            'Field Has No Values',
+            'Field Has Values'
+        ) AS [Field Value Presence Category]
+    ;
+
+    Load
+        *,
+        [Table Rows] - [Field Value Is Null Or Empty Count] AS [Field Values Present]
+    ;
+
+    Load
+        *,
+        ApplyMap('Field Name To Field Value Is Null Or Empty Count Map', [Field Name], Null()) AS [Field Value Is Null Or Empty Count]
+    Resident [Temp $(vResultsTableName)]
+    ;
+
+    Drop Table [Temp $(vResultsTableName)];
+End Sub;
