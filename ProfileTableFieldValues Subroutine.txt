@@ -24,7 +24,7 @@ Sub ProfileTableFieldValues(vTableNameToAnalyze, vResultsTableName)
 
     Load
          [Row Number] AS [Field Number],
-         FieldName([Row Number], '$(vTableName)') AS [Field Name],
+         FieldName([Row Number], '$(vTableNameToAnalyze)') AS [Field Name],
          $(vTableRows) AS [Table Rows]
     ;
 
@@ -50,7 +50,7 @@ Sub ProfileTableFieldValues(vTableNameToAnalyze, vResultsTableName)
                 1,
                 0
             ) AS [Field Value Is Null Or Empty Count]
-        Resident [$(vTableName)]
+        Resident [$(vTableNameToAnalyze)]
         ;
     Next vCounter
 
