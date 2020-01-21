@@ -11,6 +11,12 @@ Sub ProfileTableFieldValues(vTableNameToAnalyze, vResultsTableName)
     Let vTableRows = NoOfRows('$(vTableNameToAnalyze)');
     Let vNumberOfFields = NoOfFields('$(vTableNameToAnalyze)');
 
+    [Field Name To Top Field Values Map Data]:
+    Load * Inline [
+        Key,Value
+    ]
+    ;
+
     [$(vResultsTableName)]:
     Load
         *,
@@ -54,6 +60,47 @@ Sub ProfileTableFieldValues(vTableNameToAnalyze, vResultsTableName)
             ) AS [Field Value Is Null Or Empty Count]
         Resident [$(vTableNameToAnalyze)]
         ;
+
+        // Calculate the 5 most common field values per field and their frequencies.
+        [Field Value]:
+        Load
+            [Field Value],
+            [Field Name],
+            Sum([Value Occurrence Count]) AS [Total Value Occurrence Count]
+        Group By [Field Value], [Field Name]
+        ;
+
+        Load
+            [$(vCurrentFieldName)] AS [Field Value],
+            '$(vCurrentFieldName)' AS [Field Name],
+            1 AS [Value Occurrence Count]
+        Resident [$(vTableNameToAnalyze)]
+        ;
+
+        Rename Table [Field Value] To [Temp Field Value];
+
+        [Field Value]:
+        NoConcatenate
+        First 5 Load
+            [Field Value],
+            [Field Name],
+            [Total Value Occurrence Count],
+            If(IsNull([Field Value]), 'NULL', [Field Value]) & ' (' & [Total Value Occurrence Count] & ')' AS [Field Value And Frequency]
+        Resident [Temp Field Value]
+        Order By [Total Value Occurrence Count] Desc
+        ;
+
+        Drop Table [Temp Field Value];
+
+        Concatenate([Field Name To Top Field Values Map Data])
+        Load
+            [Field Name] AS [Key],
+            Concat([Field Value And Frequency], ' | ') AS [Value]
+        Resident [Field Value]
+        Group By [Field Name]
+        ;
+
+        Drop Table [Field Value];
     Next vCounter
 
     [Map List]:
@@ -80,9 +127,16 @@ Sub ProfileTableFieldValues(vTableNameToAnalyze, vResultsTableName)
         ;
     Next vMapCounter
 
+    [Field Name To Top Field Values Map]:
+    Mapping Load
+        *
+    Resident [Field Name To Top Field Values Map Data]
+    ;
+
     Drop Tables
         [Field Stats],
-        [Map List]
+        [Map List],
+        [Field Name To Top Field Values Map Data]
     ;
 
     Rename Table [$(vResultsTableName)] To [Temp $(vResultsTableName)];
@@ -107,7 +161,8 @@ Sub ProfileTableFieldValues(vTableNameToAnalyze, vResultsTableName)
     Load
         *,
         ApplyMap('Field Name To Field Value Is Null Or Empty Count Map', [Field Name], Null()) AS [Field Value Is Null Or Empty Count],
-        ApplyMap('Field Name To Field Value Mode Map', [Field Name], Null()) AS [Field Value Mode]
+        ApplyMap('Field Name To Field Value Mode Map', [Field Name], Null()) AS [Field Value Mode],
+        ApplyMap('Field Name To Top Field Values Map', [Field Name], Null()) AS [Top Field Values]
     Resident [Temp $(vResultsTableName)]
     ;
 
