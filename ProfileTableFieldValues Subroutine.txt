@@ -40,7 +40,7 @@ Sub ProfileTableFieldValues(vTableNameToAnalyze, vResultsTableName)
     ;
 
     For vCounter = 0 To $(vNumberOfFields) - 1
-        Let vCurrentFieldName = Peek('Field Name', $(vCounter), 'Field');
+        Let vCurrentFieldName = Peek('Field Name', $(vCounter), '$(vResultsTableName)');
 
         [Field Stats]:
         Load
