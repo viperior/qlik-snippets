@@ -1,0 +1,170 @@
+// ProfileTableFieldValues Subroutine
+// Analyzes a table loaded into memory and produces a series of statistics about
+// the field values within. The stats are similar to the ones provided by Qlik
+// Sense's model viewer, but this loads the information into a table for easier
+// browsing and visualization. Measurements include field density, cardinality,
+// present values, and the number of null values or empty strings.
+// Input: name of the table to analyze, name of the table in which to store the results
+// Output: none (results are stored a table with the name specified during input)
+
+Sub ProfileTableFieldValues(vTableNameToAnalyze, vResultsTableName)
+    Let vTableRows = NoOfRows('$(vTableNameToAnalyze)');
+    Let vNumberOfFields = NoOfFields('$(vTableNameToAnalyze)');
+
+    [Field Name To Top Field Values Map Data]:
+    Load * Inline [
+        Key,Value
+    ]
+    ;
+
+    [$(vResultsTableName)]:
+    Load
+        *,
+        Round(([Field Distinct Value Count] / [Table Rows]) * 100.0, 0.0001) AS [Field Cardinality (%)]
+    ;
+
+    Load
+        *,
+        FieldValueCount([Field Name]) AS [Field Distinct Value Count]
+    ;
+
+    Load
+         [Row Number] AS [Field Number],
+         FieldName([Row Number], '$(vTableNameToAnalyze)') AS [Field Name],
+         $(vTableRows) AS [Table Rows]
+    ;
+
+    Load
+        RecNo() AS [Row Number]
+    AutoGenerate $(vNumberOfFields)
+    ;
+
+    For vCounter = 0 To $(vNumberOfFields) - 1
+        Let vCurrentFieldName = Peek('Field Name', $(vCounter), '$(vResultsTableName)');
+
+        [Field Stats]:
+        Load
+            [Field Name],
+            Sum([Field Value Is Null Or Empty Count]) AS [Field Value Is Null Or Empty Count],
+            Mode([Field Value]) AS [Field Value Mode]
+        Group By [Field Name]
+        ;
+
+        Load
+            '$(vCurrentFieldName)' AS [Field Name],
+            [$(vCurrentFieldName)] AS [Field Value],
+            If(
+                IsNull([$(vCurrentFieldName)]) Or Match([$(vCurrentFieldName)], ''),
+                1,
+                0
+            ) AS [Field Value Is Null Or Empty Count]
+        Resident [$(vTableNameToAnalyze)]
+        ;
+
+        // Calculate the 5 most common field values per field and their frequencies.
+        [Field Value]:
+        Load
+            [Field Value],
+            [Field Name],
+            Sum([Value Occurrence Count]) AS [Total Value Occurrence Count]
+        Group By [Field Value], [Field Name]
+        ;
+
+        Load
+            [$(vCurrentFieldName)] AS [Field Value],
+            '$(vCurrentFieldName)' AS [Field Name],
+            1 AS [Value Occurrence Count]
+        Resident [$(vTableNameToAnalyze)]
+        ;
+
+        Rename Table [Field Value] To [Temp Field Value];
+
+        [Field Value]:
+        NoConcatenate
+        First 5 Load
+            [Field Value],
+            [Field Name],
+            [Total Value Occurrence Count],
+            If(IsNull([Field Value]), 'NULL', [Field Value]) & ' (' & [Total Value Occurrence Count] & ')' AS [Field Value And Frequency]
+        Resident [Temp Field Value]
+        Order By [Total Value Occurrence Count] Desc
+        ;
+
+        Drop Table [Temp Field Value];
+
+        Concatenate([Field Name To Top Field Values Map Data])
+        Load
+            [Field Name] AS [Key],
+            Concat([Field Value And Frequency], ' | ') AS [Value]
+        Resident [Field Value]
+        Group By [Field Name]
+        ;
+
+        Drop Table [Field Value];
+    Next vCounter
+
+    [Map List]:
+    Load * Inline
+    [
+        Key Field Name,Value Field Name,Source Table Name
+        Field Name,Field Value Is Null Or Empty Count,Field Stats
+        Field Name,Field Value Mode,Field Stats
+    ]
+    ;
+
+    Let vMapCount = NoOfRows('Map List');
+
+    For vMapCounter = 0 To $(vMapCount) - 1
+        Let vCurrentMapKeyFieldName = Peek('Key Field Name', $(vMapCounter), 'Map List');
+        Let vCurrentMapValueFieldName = Peek('Value Field Name', $(vMapCounter), 'Map List');
+        Let vCurrentMapSourceTableName = Peek('Source Table Name', $(vMapCounter), 'Map List');
+
+        [$(vCurrentMapKeyFieldName) To $(vCurrentMapValueFieldName) Map]:
+        Mapping Load
+            [$(vCurrentMapKeyFieldName)]   AS [Key],
+            [$(vCurrentMapValueFieldName)] AS [Value]
+        Resident [$(vCurrentMapSourceTableName)]
+        ;
+    Next vMapCounter
+
+    [Field Name To Top Field Values Map]:
+    Mapping Load
+        *
+    Resident [Field Name To Top Field Values Map Data]
+    ;
+
+    Drop Tables
+        [Field Stats],
+        [Map List],
+        [Field Name To Top Field Values Map Data]
+    ;
+
+    Rename Table [$(vResultsTableName)] To [Temp $(vResultsTableName)];
+
+    [$(vResultsTableName)]:
+    NoConcatenate
+    Load
+        *,
+        Round(([Field Values Present] / [Table Rows]) * 100.0, 0.0001) AS [Field Density (%)],
+        If(
+            [Field Values Present] = 0,
+            'Field Has No Values',
+            'Field Has Values'
+        ) AS [Field Value Presence Category]
+    ;
+
+    Load
+        *,
+        [Table Rows] - [Field Value Is Null Or Empty Count] AS [Field Values Present]
+    ;
+
+    Load
+        *,
+        ApplyMap('Field Name To Field Value Is Null Or Empty Count Map', [Field Name], Null()) AS [Field Value Is Null Or Empty Count],
+        ApplyMap('Field Name To Field Value Mode Map', [Field Name], Null()) AS [Field Value Mode],
+        ApplyMap('Field Name To Top Field Values Map', [Field Name], Null()) AS [Top Field Values]
+    Resident [Temp $(vResultsTableName)]
+    ;
+
+    Drop Table [Temp $(vResultsTableName)];
+End Sub;
