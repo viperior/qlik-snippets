@@ -1,0 +1,70 @@
+// Subroutine: CreateDateDimension(vTableNameContainingDateKey, vDateKeyFieldName, vDateDimensionFieldLabel, vMinDateBoundaryMode, vMaxDateBoundaryMode)
+// Creates a high-quality, feature-rich date dimension from the organizational master calendar.
+// Parameters:
+//   vTableNameContainingDateKey: The name of the table containing the date key, as an integer.
+//   vDateKeyFieldName: The name of the date key field.
+//   vDateDimensionFieldLabel: The label to use to label the new date dimension fields.
+//   vMinDateBoundaryMode: 'Unlimited' or an integer representing the minimum allowed date value.
+//   vMaxDateBoundaryMode: 'Unlimited' or an integer representing the maximum allowed date value.
+
+Sub CreateDateDimension(vTableNameContainingDateKey, vDateKeyFieldName, vDateDimensionFieldLabel, vMinDateBoundaryMode, vMaxDateBoundaryMode)
+    If IsNum('$(vMinDateBoundaryMode)') Then
+        Let vDateDimensionMinDate = $(vMinDateBoundaryMode);
+    Else
+        Call GetMinDate(vDateDimensionMinDate, vTableNameContainingDateKey, vDateKeyFieldName);
+    End If
+
+    If IsNum('$(vMaxDateBoundaryMode)') Then
+        Let vDateDimensionMaxDate = $(vMaxDateBoundaryMode);
+    Else
+        Call GetMaxDate(vDateDimensionMaxDate, vTableNameContainingDateKey, vDateKeyFieldName);
+    End If
+    
+    [$(vDateDimensionFieldLabel)]:
+    Load
+        [Date Integer]                   AS [$(vDateKeyFieldName)],
+        [Date]                           AS [$(vDateDimensionFieldLabel)],
+        [Year]                           AS [$(vDateDimensionFieldLabel) Year],
+        [Month Number]                   AS [$(vDateDimensionFieldLabel) Month Number],
+        [Day Number]                     AS [$(vDateDimensionFieldLabel) Day Number],
+        [Week Number]                    AS [$(vDateDimensionFieldLabel) Week Number],
+        [Is Today Flag]                  AS [$(vDateDimensionFieldLabel) Is Today Flag],
+        [Is Yesterday Flag]              AS [$(vDateDimensionFieldLabel) Is Yesterday Flag],
+        [Is In Future Flag]              AS [$(vDateDimensionFieldLabel) Is In Future Flag],
+        [Is Within Last 365 Days Flag]   AS [$(vDateDimensionFieldLabel) Is Within Last 365 Days Flag],
+        [Is Within Last 60 Days Flag]    AS [$(vDateDimensionFieldLabel) Is Within Last 60 Days Flag],
+        [Is Within Last 30 Days Flag]    AS [$(vDateDimensionFieldLabel) Is Within Last 30 Days Flag],
+        [Is Within Last 7 Days Flag]     AS [$(vDateDimensionFieldLabel) Is Within Last 7 Days Flag],
+        [Is Within Next 365 Days Flag]   AS [$(vDateDimensionFieldLabel) Is Within Next 365 Days Flag],
+        [Is Within Next 60 Days Flag]    AS [$(vDateDimensionFieldLabel) Is Within Next 60 Days Flag],
+        [Is Within Next 30 Days Flag]    AS [$(vDateDimensionFieldLabel) Is Within Next 30 Days Flag],
+        [Is Within Next 7 Days Flag]     AS [$(vDateDimensionFieldLabel) Is Within Next 7 Days Flag],
+        [Is Within Year To Date Flag]    AS [$(vDateDimensionFieldLabel) Is Within Year To Date Flag],
+        [Is Within Quarter To Date Flag] AS [$(vDateDimensionFieldLabel) Is Within Quarter To Date Flag],
+        [Is Within Month To Date Flag]   AS [$(vDateDimensionFieldLabel) Is Within Month To Date Flag],
+        [Is Within Week To Date Flag]    AS [$(vDateDimensionFieldLabel) Is Within Week To Date Flag],
+        [Is Within Current Period Flag]  AS [$(vDateDimensionFieldLabel) Is Within Current Period Flag],
+        [Is Within Last Period Flag]     AS [$(vDateDimensionFieldLabel) Is Within Last Period Flag],
+        [Is Within Last Period 2 Flag]   AS [$(vDateDimensionFieldLabel) Is Within Last Period 2 Flag],
+        [Is Within Last Period 3 Flag]   AS [$(vDateDimensionFieldLabel) Is Within Last Period 3 Flag],
+        [Is Within Last Period 4 Flag]   AS [$(vDateDimensionFieldLabel) Is Within Last Period 4 Flag],
+        [Is Within Last Period 5 Flag]   AS [$(vDateDimensionFieldLabel) Is Within Last Period 5 Flag],
+        [Month]                          AS [$(vDateDimensionFieldLabel) Month],
+        [Quarter Number]                 AS [$(vDateDimensionFieldLabel) Quarter Number],
+        [Week]                           AS [$(vDateDimensionFieldLabel) Week],
+        [Quarter]                        AS [$(vDateDimensionFieldLabel) Quarter]
+    From [lib://Warehouse - Dimensions/Time.qvd] (qvd)
+    Where [Date Integer] >= $(vDateDimensionMinDate) And [Date Integer] <= $(vDateDimensionMaxDate)
+    ;
+
+    Let vDateDimensionTableRowCount = NoOfRows('$(vDateDimensionFieldLabel)');
+
+    If $(vDateDimensionTableRowCount) < 1 Then
+        Let vMessage = 'Error while creating the date dimension, $(vDateDimensionFieldLabel). No dates within range: $(vDateDimensionMinDate) to $(vDateDimensionMaxDate)';
+        Trace $(vMessage);
+        Call ThrowError('$(vMessage)');
+    Else
+        Let vMessage = 'New date dimension, $(vDateDimensionFieldLabel), created containing $(vDateDimensionTableRowCount) dates.';
+        Trace $(vMessage);
+    End If
+End Sub
