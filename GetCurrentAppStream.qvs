@@ -1,0 +1,50 @@
+// Subroutine: GetCurrentAppStream(vCurrentAppStreamName)
+// Determine the name of the stream in which the current app is published (unpublished apps will return, "Unpublished").
+
+Sub GetCurrentAppStream(vCurrentAppStreamName)
+    LIB CONNECT TO 'monitor_apps_REST_app';
+
+    [RestConnectorMasterTable]:
+    SQL SELECT
+        "id" AS "id_u2",
+        "appId",
+        "published",
+        "__KEY_root",
+        (SELECT
+            "id" AS "id_u1",
+            "name" AS "name_u1",
+            "privileges" AS "privileges_u1",
+            "__FK_stream"
+        FROM "stream" FK "__FK_stream")
+    FROM JSON (wrap on) "root" PK "__KEY_root"
+    ;
+
+    [App Stream Key To Stream Name]:
+    Mapping Load
+        [__FK_stream] AS [%App Stream Key],
+        [name_u1]     AS [App Stream Name]
+    Resident [RestConnectorMasterTable]
+    Where Not IsNull([__FK_stream])
+    ;
+
+    [Current App Stream]:
+    First 1 Load
+        [__KEY_root] AS [%App Key],
+        [id_u2]      AS [App ID],
+        ApplyMap(
+            'App Stream Key To Stream Name',
+            [__KEY_root],
+            'Unpublished'
+        ) AS [App Stream Name]
+    Resident [RestConnectorMasterTable]
+    Where NOT IsNull([__KEY_root]) And Match([id_u2], DocumentName())
+    ;
+
+    Drop Table [RestConnectorMasterTable];
+
+    Let vCurrentAppStreamName = Peek('App Stream Name', 0, 'Current App Stream');
+    Let vMessage = 'The stream name for the current Qlik app is "$(vCurrentAppStreamName)".';
+    Trace $(vMessage);
+
+    Drop Table [Current App Stream];
+End Sub
