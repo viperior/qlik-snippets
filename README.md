@@ -1,2 +1,2 @@
 # qlik-snippets
-Qlik script technique examples
+Qlik scripting techniques and useful subroutines
