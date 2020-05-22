@@ -2,6 +2,9 @@
 // Determine the name of the stream in which the current app is published (unpublished apps will return, "Unpublished").
 
 Sub GetCurrentAppStream(vCurrentAppStreamName)
+    // Ensure the vCurrentAppStreamName variable does not contain a value from a previous reload.
+    Let vCurrentAppStreamName = '';
+
     LIB CONNECT TO 'monitor_apps_REST_app';
 
     [RestConnectorMasterTable]:
