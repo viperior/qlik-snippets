@@ -1,0 +1,4 @@
+// Static variables, defined at runtime, for the current date and time in UTC.
+LET vReloadStartTime = UTC();
+LET vNow = Num('$(vReloadStartTime)');
+LET vToday = Num(Floor($(vNow)));
