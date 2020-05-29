@@ -1,0 +1,9 @@
+// Drop every table. Ford every stream.
+If $(vDropTable) = 1 Then
+    Let vTableCount = NoOfTables();
+
+    For vCounter = 0 To $(vTableCount) - 1
+        Let vCurrentTableName = TableName($(vCounter));
+        Drop Table [$(vCurrentTableName)];
+    Next vCounter
+End If
