@@ -1,0 +1,9 @@
+// Count the total number of tables and rows loaded.
+Let vTableCount = NoOfTables();
+Let vTotalRowCount = 0;
+
+For vCounter = 0 To $(vTableCount) - 1
+    Let vCurrentTableName = TableName($(vCounter));
+    Let vCurrentTableRowCount = NoOfRows('$(vCurrentTableName)');
+    Let vTotalRowCount = $(vTotalRowCount) + $(vCurrentTableRowCount);
+Next vCounter
