@@ -2,7 +2,7 @@
 If $(vDropTable) = 1 Then
     Let vTableCount = NoOfTables();
 
-    For vCounter = 0 To $(vTableCount) - 1
+    For vCounter = $(vTableCount) - 1 To 0 Step -1
         Let vCurrentTableName = TableName($(vCounter));
 
         If Not IsNull(TableNumber('$(vCurrentTableName)')) Then
