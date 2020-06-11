@@ -5,7 +5,7 @@ If $(vDropTable) = 1 Then
     For vCounter = 0 To $(vTableCount) - 1
         Let vCurrentTableName = TableName($(vCounter));
 
-        If Not IsNull(TableNumber('vCurrentTableName')) Then
+        If Not IsNull(TableNumber('$(vCurrentTableName)')) Then
             Drop Table [$(vCurrentTableName)];
         End If
     Next vCounter
