@@ -37,7 +37,7 @@ Sub RequireRecentData(vTableNameToInspect, vDataRecencyFieldName, vDataRecencyTh
 
     // Calculate how much time has passed between when the data source was accessed and now.
     // Note: assumes access timestamp is in UTC.
-    Let vDataRecency = UTC() - $(vMinDataAccessTime);
+    Let vDataRecency = UTC() - $(vMinDataAccessTimestamp);
     Let vDataRecencyHours = Num($(vDataRecency) * 24.0, '#,##0.000');
     Let vThresholdDifference = Num($(vDataRecency) - $(vDataRecencyThreshold), '#,##0.000');
     Let vThresholdDifferenceHours = Num($(vThresholdDifference) * 24.0, '#,##0.000');
