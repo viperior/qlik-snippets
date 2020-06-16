@@ -1,0 +1,60 @@
+Sub RequireRecentData(vTableNameToInspect, vDataRecencyFieldName, vDataRecencyThreshold, vAllowSilentFailure)
+    // Asserts that data should be fresher than a minimum threshold (expressed in days as a decimal).
+    // 0.125 days = 3 hours
+    // Using this will guard against mistakes in task ordering, as it forces the task chain to be in the correct order to fire all tasks successfully.
+
+    // Parameters:
+    // vDataRecencyTableNameToInspect
+    // The name of the table in Qlik for which the data recency policy should be enforced
+    // Example value: 'Application Key'
+
+    // vDataRecencyTimestampFieldName
+    // The name of the field containing a timestamp representing the time at which the data source was accessed in UTC.
+    // Example value: 'Data Source Accessed Timestamp'
+
+    // vDataRecencyThreshold
+    // The amount of time, expressed in days as a decimal, representing the maximum threshold before a silent or forceful error is thrown (0.125 = 3 hours)
+    // Example value: 0.125
+
+    // vAllowSilentFailure
+    // A true/false toggle that controls whether the reload is forced to fail or only writes an error message to the log before proceeding
+    // Example value: 0
+
+    // Example call:
+    // RequireRecentData('Application Key', 'Data Source Access Time', 0.125, 0)
+
+    Trace Enforcing data recency policy...;
+
+    // Determine the recency of the data (use oldest access timestamp value).
+    [Min Data Access Time]:
+    Load
+        Min([$(vDataRecencyFieldName)]) AS [Min Data Access Time]
+    Resident [$(vTableNameToInspect)]
+    ;
+
+    Let vMinDataAccessTimestamp = Timestamp(Peek('Min Data Access Time', 0, 'Min Data Access Time'));
+    Trace Data access time: $(vMinDataAccessTimestamp) UTC;
+
+    // Calculate how much time has passed between when the data source was accessed and now.
+    // Note: assumes access timestamp is in UTC.
+    Let vDataRecency = UTC() - $(vMinDataAccessTime);
+    Let vDataRecencyHours = Num($(vDataRecency) * 24.0, '#,##0.000');
+    Let vThresholdDifference = Num($(vDataRecency) - $(vDataRecencyThreshold), '#,##0.000');
+    Let vThresholdDifferenceHours = Num($(vThresholdDifference) * 24.0, '#,##0.000');
+    Trace Data recency in hours: $(vDataRecencyHours);
+
+    If $(vDataRecency) > $(vDataRecencyThreshold) Then
+        Trace Data recency exceeds threshold! Aborting reload and throwing error.;
+        Trace Threshold exceeded by $(vThresholdDifferenceHours) hours.;
+        Let vMessage = 'Error: data recency policy exceeded by $(vThresholdDifferenceHours) hours. Please ensure data source is being reloaded automatically and in the correct order. Otherwise, increase the threshold setting.';
+        Trace $(vMessage);
+
+        If $(vAllowSilentFailure) = 0 Then
+            Call ThrowException('$(vMessage)');
+        Else
+            Trace Allowing reload to proceed because Allow Silent Failure mode is active.;
+        End If
+    Else
+        Trace Data recency policy satisfied.;
+    End If
+End Sub;
