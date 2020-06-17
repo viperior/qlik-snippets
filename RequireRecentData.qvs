@@ -24,6 +24,10 @@ Sub RequireRecentData(vTableNameToInspect, vDataRecencyFieldName, vDataRecencyTh
     // RequireRecentData('Application Key', 'Data Source Access Time', 0.125, 0)
 
     Trace Enforcing data recency policy...;
+    Trace Table: $(vTableNameToInspect);
+    Trace Field: $(vDataRecencyFieldName);
+    Trace Threshold (days): $(vDataRecencyThreshold);
+    Trace Allow silent failure: $(vAllowSilentFailure);
 
     // Determine the recency of the data (use oldest access timestamp value).
     [Min Data Access Time]:
@@ -38,9 +42,9 @@ Sub RequireRecentData(vTableNameToInspect, vDataRecencyFieldName, vDataRecencyTh
     // Calculate how much time has passed between when the data source was accessed and now.
     // Note: assumes access timestamp is in UTC.
     Let vDataRecency = UTC() - vMinDataAccessTimestamp;
-    Let vDataRecencyHours = Num($(vDataRecency) * 24.0, '#,##0.000');
-    Let vThresholdDifference = Num($(vDataRecency) - $(vDataRecencyThreshold), '#,##0.000');
-    Let vThresholdDifferenceHours = Num($(vThresholdDifference) * 24.0, '#,##0.000');
+    Let vDataRecencyHours = Num($(vDataRecency) * 24.0, '#,##0.00000');
+    Let vThresholdDifference = Num($(vDataRecency) - $(vDataRecencyThreshold), '#,##0.00000');
+    Let vThresholdDifferenceHours = Num($(vThresholdDifference) * 24.0, '#,##0.00000');
     Trace Data recency in hours: $(vDataRecencyHours);
 
     If $(vDataRecency) > $(vDataRecencyThreshold) Then
