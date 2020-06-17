@@ -37,6 +37,7 @@ Sub RequireRecentData(vTableNameToInspect, vDataRecencyFieldName, vDataRecencyTh
     ;
 
     Let vMinDataAccessTimestamp = Timestamp(Peek('Min Data Access Time', 0, 'Min Data Access Time'));
+    Drop Table [Min Data Access Time];
     Trace Data access time: $(vMinDataAccessTimestamp) UTC;
 
     // Calculate how much time has passed between when the data source was accessed and now.
