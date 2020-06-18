@@ -1,5 +1,5 @@
 LET vReloadEndTime = UTC();
 LET vReloadDuration = vReloadEndTime - vReloadStartTime;
-LET vAppInfoFooter = 'Data Last Reloaded at $(vReloadEndTime) | Application Version: $(vVersion)';
+LET vAppInfoFooter = 'Data Last Reloaded at $(vReloadEndTime) UTC | Application Version: $(vVersion)';
 
 Exit Script;
