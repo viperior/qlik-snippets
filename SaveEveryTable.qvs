@@ -1,0 +1,42 @@
+Sub SaveEveryTable(vDataFilePrefix, vDataFilePrefixSeparator, vTargetQVDStorePath, vStoreToQVDs, vSaveToCSVFlag)
+    // Saves every table currently loaded into memory to disk (as QVD and optionally, CSV).
+
+    If $(vStoreToQVDs) = 0 Then
+        Let vMessage = 'Store to QVD is disabled. Skipping save of every table in memory...';
+        Trace $(vMessage);
+    Else
+        Let vTableCount = NoOfTables();
+
+        If $(vTableCount) < 1 Then
+            Let vMessage = 'Error: no tables detected in memory. Unable to perform storage of data to disk.';
+            Trace $(vMessage);
+            Call ThrowError('$(vMessage)');
+        Else
+            Let vMessage = '$(vTableCount) tables detected. Proceeding with save of all tables...';
+            Trace $(vMessage);
+            
+            For vCounter = 0 To $(vTableCount) - 1
+                Let vCurrentTableName = TableName($(vCounter));
+                Let vCurrentTableFileName = '$(vDataFilePrefix)$(vDataFilePrefixSeparator)$(vCurrentTableName)';
+                Let vCurrentTableFilePath = '$(vTargetQVDStorePath)$(vCurrentTableFileName)';
+
+                Store [$(vCurrentTableName)] Into [$(vCurrentTableFilePath).qvd] (qvd);
+                
+                If Len('$(vSaveToCSVFlag)') < 1 Then
+                    Let vMessage = 'Save-to-CSV flag not set. Skipping CSV save...';
+                    Trace $(vMessage);
+                Else
+                    If $(vSaveToCSVFlag) = 1 Then
+                        Let vMessage = 'Save-to-CSV enabled. Saving to CSV...';
+                        Trace $(vMessage);
+                        
+                        Store [$(vCurrentTableName)] Into [$(vCurrentTableFilePath).csv] (txt);
+                    Else
+                        Let vMessage = 'Save-to-CSV disabled. Skipping CSV save...';
+                        Trace $(vMessage);
+                    End If
+                End If
+            Next vCounter
+        End If
+    End If
+End Sub;
