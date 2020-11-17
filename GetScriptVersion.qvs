@@ -1,0 +1,14 @@
+Sub GetScriptVersion(vStreamName, vAppName)
+    // Loads an external .VERSION file, writes it to the script execution log, and stores it into the variable, vVersion.
+    [Version]:
+    LOAD
+        @1 AS [Version]
+    FROM [lib://Qlik Scripts/$(vStreamName)/$(vAppName)/VERSION.VERSION]
+    (txt, utf8, no labels, delimiter is '\t', msq)
+    ;
+
+    Let vVersion = Peek('Version', 0, 'Version');
+    Drop Table [Version];
+    Let vMessage = 'vVersion:$(vVersion)';
+    Trace $(vMessage);
+End Sub;
