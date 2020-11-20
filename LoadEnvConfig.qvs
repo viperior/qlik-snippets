@@ -1,4 +1,4 @@
-Sub LoadEnvConfig()
+Sub LoadEnvConfig
     // Loads a CSV file containing configuration options for the local Qlik Sense Enterprise Server
     [Config Map]:
     Mapping Load
