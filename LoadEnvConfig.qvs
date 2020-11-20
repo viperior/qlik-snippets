@@ -1,0 +1,12 @@
+Sub LoadEnvConfig
+    // Loads a CSV file containing configuration options for the local Qlik Sense Enterprise Server
+    [Config Map]:
+    Mapping Load
+        [config_setting_name],
+        [config_setting_value]
+    From [lib://Qlik Config/qlik.csv]
+    (txt, codepage is 28591, embedded labels, delimiter is ',', msq)
+    ;
+
+    Let vAllowStaleData = applymap('Config Map', 'disable_data_recency_policy', 0);
+End Sub;
