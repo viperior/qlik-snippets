@@ -1,15 +1,27 @@
 # qlik-snippets
-Qlik scripting techniques and useful subroutines
+A library of useful Qlik subroutines that automate common tasks, support templating, and speed up the development of ETL pipelines
+
+## First-time setup
+1. Download the repository to a location that is accessible from your Qlik Sense Enterprise server.
+2. Create a new data connection in Qlik Management Console (QMC).
+3. Copy the following code to a Qlik script and replace {FileName} with the name of the subroutine or snippet you want to use.
+
+   ```$(Must_Include=lib://Qlik Utility Library/{FileName}.qvs);```
+
+   Some subroutines have code that does not execute until called:
+  
+   ```Call ProfileTableFieldValues('Source Table Name', 'Output Table Name');```
 
 ## ProfileTableFieldValues Subroutine
 This subroutine performs automated analysis of a table's field values.
 
 ### Usage
-1. Create a new section named "ProfileTableFieldValues Subroutine" in your script.
-2. Copy/paste the subroutine into this new section.
-3. Ensure that this section is placed somewhere above where you want to first call it.
-4. Place the following code on a line by itself, somewhere after the table you want to analyze has been loaded:
 
-   `Call ProfileTableFieldValues('Name Of Table You Want To Analyze', 'Name For Results Table')`
+1. Copy the following code to the end of your Qlik script:
 
-5. Reload the script and check the data model viewer. You should see your new table.
+   ```
+   $(Must_Include=lib://Qlik Utility Library/ProfileTableFieldValues.qvs);
+   Call ProfileTableFieldValues('Source Table Name', 'Output Table Name');
+   ```
+
+2. Reload the script and check the data model viewer. You should see your new table.
