@@ -9,4 +9,5 @@ Sub LoadEnvConfig
     ;
 
     Let vAllowStaleData = applymap('Config Map', 'disable_data_recency_policy', 0);
+    Let vDataRecencyThreshold = applymap('Config Map', 'data_recency_threshold', 0.125);
 End Sub;
