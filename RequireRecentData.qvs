@@ -36,6 +36,15 @@ Sub RequireRecentData(vTableNameToInspect, vDataRecencyFieldName, vDataRecencyTh
     Resident [$(vTableNameToInspect)]
     ;
 
+    // Check to ensure that a min timestamp was found
+    Let vTableRowCount = NoOfRows('Min Data Access Time');
+
+    If $(vTableRowCount) < 1 Then
+        Let vMessage = '[ERROR] Could not find a data access timestamp in the source table, $(vTableNameToInspect), because it has $(vTableRowCount) rows';
+        Trace $(vMessage);
+        Call ThrowException('$(vMessage)');
+    End If
+
     Let vMinDataAccessTimestamp = Timestamp(Peek('Min Data Access Time', 0, 'Min Data Access Time'));
     Drop Table [Min Data Access Time];
     Trace Data access time: $(vMinDataAccessTimestamp) UTC;
