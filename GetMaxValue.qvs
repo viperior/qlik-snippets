@@ -1,0 +1,15 @@
+// GetMaxValue Subroutine
+// Inputs: variables to store return value, table name, field name to scan for max value
+// Output: max value as a numeric (stored in global variable)
+
+Sub GetMaxValue(vMaxValue, vTableName, vFieldName)
+    [Max Value]:
+    Load
+         Max([$(vFieldName)]) AS [Max Value]
+    Resident [$(vTableName)]
+    ;
+    
+    vMaxValue = Peek('Max Value', 0, 'Max Value');
+    
+    Drop Table [Max Value];
+End Sub;
